@@ -1,7 +1,7 @@
 /*
  * file: Main.java
  * 
- * Copyright © George J. Grevera, 2016. All rights reserved.
+ * Copyright George J. Grevera, 2016. All rights reserved.
  */
 import java.awt.BorderLayout;
 import java.awt.Insets;
