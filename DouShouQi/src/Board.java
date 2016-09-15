@@ -10,6 +10,8 @@
  *   
  * Copyright George J. Grevera, 2016. All rights reserved.
  */
+
+
 public class Board {
 
     //the low order 5 bits is one of the following playing/moveable pieces
@@ -51,7 +53,7 @@ public class Board {
     public static final int fRows = 9;  //# of board rows
     public static final int fCols = 7;  //# of board cols
 
-    public static enum Color {None, Red, Black}  //color of piece (or none)
+    public enum Color {None, Red, Black}  //color of piece (or none)
 
     //-----------------------------------------------------------------------
     //the playing board.  mBoard[0][0] is the upper left corner.
@@ -63,9 +65,8 @@ public class Board {
     // (0,0) of the board, and black will start in the bottom half.
     // be careful.  the opposite sides do not mirror each other!
     public Board() {
-        // \todo v1
-        int mRow = getBoardMedian(fRows);
-        int mCol = getBoardMedian(fCols);
+        int mRow = getBoardRowMedian();
+        int mCol = getBoardColumnMedian();
         // set red den
         mBoard[0][mCol] = cRDen;
         // set black den
@@ -91,24 +92,71 @@ public class Board {
         for (int r = 0; r < fRows; r++)
             for (int c = 0; c < fCols; c++)
                 if (mBoard[r][c] == 0) mBoard[r][c] = cGround;
+
+        // set pieces for red
+        setPiece(0, 0, rLion);
+        setPiece(0, fCols - 1, rTiger);
+        setPiece(1, 1, rWolf);
+        setPiece(1, fCols - 2, rCat);
+        setPiece(2, 0, rRat);
+        setPiece(2, 2, rLeopard);
+        setPiece(2, fCols - 3, rDog);
+        setPiece(2, fCols - 1, rElephant);
+        // set pieces for black, diagonal-wise reversed.
+        setPiece(fRows - 1, fCols - 1, bLion);
+        setPiece(fRows - 1, 0, bTiger);
+        setPiece(fRows - 2, fCols - 2, bWolf);
+        setPiece(fRows - 2, 1, bCat);
+        setPiece(fRows - 3, fCols - 1, bRat);
+        setPiece(fRows - 3, fCols - 3, bLeopard);
+        setPiece(fRows - 3, 2, bDog);
+        setPiece(fRows - 3, 0, bElephant);
     }
+
+
+    /**
+     * Place a piece at an empty board cell.
+     * If the cell is not vacant, nothing will be placed.
+     *
+     * @param r The row number of the cell.
+     * @param c The column number of the cell.
+     * @param p The piece to be placed.
+     */
+    void setPiece(int r, int c, int p) {
+        // TODO: Add rules for special cells
+        if (r >= 0 && r < fRows && c >= 0 && c < fCols &&
+                p >= rbNone && p <= bElephant &&
+                (mBoard[r][c] & fPieceMask) == 0)
+            mBoard[r][c] += p;
+    }
+
+
+    /**
+     * Remove a piece from a board cell.
+     *
+     * @param r The row number of the cell.
+     * @param c The column number of the cell.
+     */
+    void removePiece(int r, int c) {
+        if (r >= 0 && r < fRows && c >= 0 && c < fCols)
+            mBoard[r][c] &= fBoardMask;
+    }
+
 
     //-----------------------------------------------------------------------
     // return the specific (moveable) piece (e.g., bWolf or rbNone) at the
     // indicated position.
     public int getPiece(int r, int c) {
-        if (r >= fRows || c >= fCols || r < 0 || c < 0)
-            return rbNone;
-        return fPieceMask & mBoard[r][c];
+        return (r >= fRows || c >= fCols || r < 0 || c < 0) ? rbNone :
+                fPieceMask & mBoard[r][c];
     }
 
     //-----------------------------------------------------------------------
     // given a piece, return its rank (or 0 for an unknown piece).
     // rat is 1, cat is 2, dog is 3, wolf is 4, leopard is 5, tiger is 6, lion is 7, elephant is 8.
     public int getRank(int p) {
-        if (p <= rbNone || p > bElephant)
-            return rbNone;
-        return (p % rElephant == 0) ? rElephant : p % rElephant;
+        return (p <= rbNone || p > bElephant) ? rbNone :
+                (p % rElephant == 0) ? rElephant : p % rElephant;
     }
 
     //-----------------------------------------------------------------------
@@ -126,9 +174,8 @@ public class Board {
     // returns what appears on the underlying board at the specified position
     // (e.g., cWater), or cNone if out of bounds.
     public int getBoard(int r, int c) {
-        if (r >= fRows || c >= fCols || r < 0 || c < 0)
-            return cNone;
-        return fBoardMask & mBoard[r][c];
+        return (r >= fRows || c >= fCols || r < 0 || c < 0) ? cNone :
+                fBoardMask & mBoard[r][c];
     }
 
     //-----------------------------------------------------------------------
@@ -147,9 +194,8 @@ public class Board {
     // returns t if this spot does not have any (moveable) piece on it;
     // f otherwise or if out of bounds.
     public boolean isEmpty(int r, int c) {
-        if (r >= fRows || c >= fCols || r < 0 || c < 0)
-            return false;
-        return rbNone == (fPieceMask & mBoard[r][c]);
+        return (r < fRows && c < fCols && r >= 0 && c >= 0) &&
+                rbNone == (fPieceMask & mBoard[r][c]);
     }
 
     //-----------------------------------------------------------------------
@@ -172,8 +218,34 @@ public class Board {
     // if you have a better idea, please let me know!
     @Override
     public String toString() {
-        // \todo v1
-        return "";
+        StringBuffer sb = new StringBuffer();
+        for (int r = 0; r < fRows; r++) {
+            String line = "";
+            for (int c = 0; c < fCols; c++)
+                line += String.format("%1$s|%2$s ", getBoardType(r, c), getPieceType(r, c));
+            sb.append(String.format("%s%n", line.trim()));
+        }
+        return sb.toString();
+    }
+
+
+    /**
+     * Get the median row number of the board definition.
+     *
+     * @return An {@link Integer} which is the median number of row count.
+     */
+    static int getBoardRowMedian() {
+        return getMedian(fRows);
+    }
+
+
+    /**
+     * Get the median row number of the board definition.
+     *
+     * @return An {@link Integer} which is the median number of column count.
+     */
+    static int getBoardColumnMedian() {
+        return getMedian(fCols);
     }
 
 
@@ -190,10 +262,124 @@ public class Board {
      * @param count An integer which is a countf a range whose lower bound is 0.
      * @return An integer which is the median number.
      */
-    private int getBoardMedian(int count) {
-        if (count % 2 == 0)
-            return (count - 1) >> 1;
-        return count >> 1;
+    private static int getMedian(int count) {
+        return (count <= 0 || count == 1) ? 0 :
+                (count % 2 == 0) ? (count - 1) >> 1 : count >> 1;
     }
+
+
+    /**
+     * Get a cell's underling board's String form.
+     *
+     * @param r The row number of the board cell.
+     * @param c The column number of the board cell.
+     * @return A {@link String} which represents the underling board.
+     */
+    private String getBoardType(int r, int c) {
+        switch (getBoard(r, c)) {
+            case cWater:
+                return "Water";
+            case cGround:
+                return "Ground";
+            case cBDen:
+                return "BDen";
+            case cRDen:
+                return "RDen";
+            case cRTrap:
+                return "RTrap";
+            case cBTrap:
+                return "BTrap";
+            default:
+                return "None";
+        }
+    }
+
+
+    /**
+     * Get a piece's String form.
+     *
+     * @param r The row number of the cell where the piece is.
+     * @param c The column number of the cell where the piece is.
+     * @return A {@link String} which represents the piece.
+     */
+    private String getPieceType(int r, int c) {
+        switch (getPiece(r, c)) {
+            case rCat:
+                return "rCa";
+            case rDog:
+                return "rDo";
+            case rElephant:
+                return "rEl";
+            case rLeopard:
+                return "rLe";
+            case rLion:
+                return "rLi";
+            case rRat:
+                return "rRa";
+            case rTiger:
+                return "rTi";
+            case rWolf:
+                return "rWo";
+            case bCat:
+                return "bCa";
+            case bDog:
+                return "bDo";
+            case bElephant:
+                return "bEl";
+            case bLeopard:
+                return "bLe";
+            case bLion:
+                return "bLi";
+            case bRat:
+                return "bRa";
+            case bTiger:
+                return "bTi";
+            case bWolf:
+                return "bWo";
+            default:
+                return "";
+        }
+    }
+
+
+    /**
+     * Build an array of {@code String} of piece names as
+     * a textual output table's headers in order of piece values;
+     *
+     * @return An array of {@code String} which represents the piece names.
+     */
+    static String[] buildPieceLogHeader() {
+        String[] header = new String[8];
+        header[Board.rRat - 1] = "rat";
+        header[Board.rCat - 1] = "cat";
+        header[Board.rDog - 1] = "dog";
+        header[Board.rLion - 1] = "lion";
+        header[Board.rElephant - 1] = "elephant";
+        header[Board.rWolf - 1] = "wolf";
+        header[Board.rTiger - 1] = "tiger";
+        header[Board.rLeopard - 1] = "leopard";
+
+        return header;
+    }
+
+
+    /**
+     * Build an array of {@code String} of cell types as
+     * a textual output table's headers in order of types values;
+     *
+     * @return An array of {@code String} which represents the cell type names.
+     */
+    static String[] buildCellHeader() {
+        String[] header = new String[6];
+        header[(Board.cGround - 1) >> 5] = "ground";
+        header[(Board.cWater - 1) >> 5] = "water";
+        header[(Board.cBTrap - 1) >> 5] = "bTrap";
+        header[(Board.cRTrap - 1) >> 5] = "rTrap";
+        header[(Board.cRDen - 1) >> 5] = "rDen";
+        header[(Board.cBDen - 1) >> 5] = "bDen";
+
+        return header;
+    }
+
 
 }  //end class Board
