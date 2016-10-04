@@ -54,14 +54,22 @@ public class BoardTest {
         System.out.println("Test whether the board is initialized correctly for RED");
 
         Boolean[] results = new Boolean[8];
-        results[Board.rLeopard - 1] = board.mBoard[2][2] == Board.cGround + Board.rLeopard;
-        results[Board.rLion - 1] = board.mBoard[0][0] == Board.cGround + Board.rLion;
-        results[Board.rWolf - 1] = board.mBoard[1][1] == Board.cGround + Board.rWolf;
-        results[Board.rTiger - 1] = board.mBoard[0][Board.fCols - 1] == Board.cGround + Board.rTiger;
-        results[Board.rCat - 1] = board.mBoard[1][Board.fCols - 2] == Board.cGround + Board.rCat;
-        results[Board.rRat - 1] = board.mBoard[2][0] == Board.cGround + Board.rRat;
-        results[Board.rDog - 1] = board.mBoard[2][Board.fCols - 3] == Board.cGround + Board.rDog;
-        results[Board.rElephant - 1] = board.mBoard[2][Board.fCols - 1] == Board.cGround + Board.rElephant;
+        results[Board.rLeopard - 1] =
+                board.mBoard[2][2] == (Board.cGround | Board.rLeopard);
+        results[Board.rLion - 1] =
+                board.mBoard[0][0] == (Board.cGround | Board.rLion);
+        results[Board.rWolf - 1] =
+                board.mBoard[1][1] == (Board.cGround | Board.rDog);
+        results[Board.rTiger - 1] =
+                board.mBoard[0][Board.fCols - 1] == (Board.cGround | Board.rTiger);
+        results[Board.rCat - 1] =
+                board.mBoard[1][Board.fCols - 2] == (Board.cGround | Board.rCat);
+        results[Board.rRat - 1] =
+                board.mBoard[2][0] == (Board.cGround | Board.rRat);
+        results[Board.rDog - 1] =
+                board.mBoard[2][Board.fCols - 3] == (Board.cGround | Board.rWolf);
+        results[Board.rElephant - 1] =
+                board.mBoard[2][Board.fCols - 1] == (Board.cGround | Board.rElephant);
 
         // console/log output
         // set the min column width to 5 because len('false') == 5
@@ -88,21 +96,21 @@ public class BoardTest {
 
         Boolean[] results = new Boolean[8];
         results[Board.bElephant - Board.rElephant - 1] =
-                board.mBoard[Board.fRows - 3][0] == Board.cGround + Board.bElephant;
+                board.mBoard[Board.fRows - 3][0] == (Board.cGround | Board.bElephant);
         results[Board.bCat - Board.rElephant - 1] =
-                board.mBoard[Board.fRows - 2][1] == Board.cGround + Board.bCat;
+                board.mBoard[Board.fRows - 2][1] == (Board.cGround | Board.bCat);
         results[Board.bDog - Board.rElephant - 1] =
-                board.mBoard[Board.fRows - 3][2] == Board.cGround + Board.bDog;
+                board.mBoard[Board.fRows - 3][2] == (Board.cGround | Board.bWolf);
         results[Board.bLion - Board.rElephant - 1] =
-                board.mBoard[Board.fRows - 1][Board.fCols - 1] == Board.cGround + Board.bLion;
+                board.mBoard[Board.fRows - 1][Board.fCols - 1] == (Board.cGround | Board.bLion);
         results[Board.bTiger - Board.rElephant - 1] =
-                board.mBoard[Board.fRows - 1][0] == Board.cGround + Board.bTiger;
+                board.mBoard[Board.fRows - 1][0] == (Board.cGround | Board.bTiger);
         results[Board.bWolf - Board.rElephant - 1] =
-                board.mBoard[Board.fRows - 2][Board.fCols - 2] == Board.cGround + Board.bWolf;
+                board.mBoard[Board.fRows - 2][Board.fCols - 2] == (Board.cGround | Board.bDog);
         results[Board.bRat - Board.rElephant - 1] =
-                board.mBoard[Board.fRows - 3][Board.fCols - 1] == Board.cGround + Board.bRat;
+                board.mBoard[Board.fRows - 3][Board.fCols - 1] == (Board.cGround | Board.bRat);
         results[Board.bLeopard - Board.rElephant - 1] =
-                board.mBoard[Board.fRows - 3][Board.fCols - 3] == Board.cGround + Board.bLeopard;
+                board.mBoard[Board.fRows - 3][Board.fCols - 3] == (Board.cGround | Board.bLeopard);
 
         // console/log output
         // set the min column width to 8 because len(elephant) == 8
@@ -238,25 +246,6 @@ public class BoardTest {
         String msg = "All trap cells are initialized correctly? Expected: %1$b, Actual: %2$b";
         msg = String.format(msg, true, red & blk);
         assertEquals(msg, true, red & blk);
-    }
-
-
-    /**
-     * Test whether a piece can be removed from a cell
-     */
-    @Test
-    public void testRemovePieceAtRandomCell() {
-        System.out.println("Test whether a piece can be removed from a random cell.");
-
-        Random r = new Random(new Date().getTime());
-        int row = r.nextInt(Board.fRows);
-        int col = r.nextInt(Board.fCols);
-        int originalCellValue = board.mBoard[row][col] & Board.fBoardMask;
-        board.removePiece(row, col);
-        int result = board.mBoard[row][col];
-        String msg = "Is the piece successfully removed? Expected: %1$d, Actual: %2$d";
-        msg = String.format(msg, originalCellValue, result);
-        assertEquals(msg, originalCellValue, result);
     }
 
 

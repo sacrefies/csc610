@@ -1,3 +1,31 @@
+//------------------------------------------------------------------------------
+//  File       : Board.java
+//  Course     : DouShouQi
+//  Date:      : 09/21/2016
+//  Author     : Jason Qiao Meng
+//  Author ID  : 10652564
+//  Description: This file contains Board and piece control for DouShouQi game.
+//------------------------------------------------------------------------------
+// version 2
+//   use these rules for game play (no variations except for the one noted
+//   below):
+//     http://veryspecial.us/free-downloads/AncientChess.com-DouShouQi.pdf
+//
+//   required variation (from https://en.wikipedia.org/wiki/Jungle_(board_game)):
+//     "All traps are universal. If an animal goes into a trap in its own
+//     region, an opponent animal is able to capture it regardless of rank
+//     difference if it is beside the trapped animal."  this avoids the
+//     known draw described in http://www.chessvariants.com/other.dir/shoudouqi2.html.
+//
+//   clarification: do not allow moves/captures where the attacker "loses."
+//     for example, do not allow the mouse to attack the lion and "lose"
+//     to the lion on purpose and be removed.
+//   as much as possible, use the functions that you have already defined.
+//------------------------------------------------------------------------------
+
+
+import static java.lang.Math.abs;
+
 /*
  * file: Board.java
  * 
@@ -10,60 +38,161 @@
  *   
  * Copyright George J. Grevera, 2016. All rights reserved.
  */
-
-
 public class Board {
 
-    //the low order 5 bits is one of the following playing/moveable pieces
-    // (or none):
+    /**
+     * No piece or an invalid piece
+     */
     public static final byte rbNone = 0;
-    //constants for red pieces
+    /**
+     * A red Rat
+     */
     public static final byte rRat = 1;
+    /**
+     * A red Cat
+     */
     public static final byte rCat = 2;
+    /**
+     * A red Dog
+     */
     public static final byte rDog = 3;
+    /**
+     * A red Wolf
+     */
     public static final byte rWolf = 4;
+    /**
+     * A red Leopard
+     */
     public static final byte rLeopard = 5;
+    /**
+     * A red Tiger
+     */
     public static final byte rTiger = 6;
+    /**
+     * A red Lion
+     */
     public static final byte rLion = 7;
+    /**
+     * A red Elephant
+     */
     public static final byte rElephant = 8;
-    //constants for black (or blue, if you prefer) pieces
+    /**
+     * A black Rat
+     */
     public static final byte bRat = 9;
+    /**
+     * A black Cat
+     */
     public static final byte bCat = 10;
+    /**
+     * A black Dog
+     */
     public static final byte bDog = 11;
+    /**
+     * A black Wolf
+     */
     public static final byte bWolf = 12;
+    /**
+     * A black Leopard
+     */
     public static final byte bLeopard = 13;
+    /**
+     * A black Tiger
+     */
     public static final byte bTiger = 14;
+    /**
+     * A black Lion
+     */
     public static final byte bLion = 15;
+    /**
+     * A black Elephant
+     */
     public static final byte bElephant = 16;
-
-    public static final byte fPieceMask = (byte)0x1f;  //to isolate piece bits
-
-    //the high order 3 bits indicates one of these board position type values.
-    // note: these never move but are part of the board itself.
-    public static final byte cNone = 0;               //not used/out of bounds
-    public static final byte cWater = (byte)(1 << 5);  //water
-    public static final byte cGround = (byte)(2 << 5);  //ordinary ground
-    public static final byte cRTrap = (byte)(3 << 5);  //red (side of board) trap
-    public static final byte cBTrap = (byte)(4 << 5);  //black (side of board) trap
-    public static final byte cRDen = (byte)(5 << 5);  //red (side of board) den
+    /**
+     * A bit mask to isolate a piece: {@code 0001 1111}.
+     * An instance value fetched from a cell consists of both cell's type and a piece.
+     * This mask separates the piece's value from the instance value.
+     */
+    public static final byte fPieceMask = (byte)0x1f;
+    /**
+     * Not used or out of bounds
+     */
+    public static final byte cNone = 0;
+    /**
+     * A water cell
+     */
+    public static final byte cWater = (byte)(1 << 5);
+    /**
+     * An ordinary ground
+     */
+    public static final byte cGround = (byte)(2 << 5);
+    /**
+     * A red trap
+     */
+    public static final byte cRTrap = (byte)(3 << 5);
+    /**
+     * A black trap
+     */
+    public static final byte cBTrap = (byte)(4 << 5);
+    /**
+     * A red Den
+     */
+    public static final byte cRDen = (byte)(5 << 5);
+    /**
+     * A black Den
+     */
     public static final byte cBDen = (byte)(6 << 5);  //black (side of board) den
-
-    public static final byte fBoardMask = (byte)0xe0;   //to isolate type bits
-
+    /**
+     * A bit mask to isolate a cell's type: {@code 1110 0000}.
+     * An instance value fetched from a cell consists of both cell's type and a piece.
+     * The high order 3 bits indicates one of these cell type values.
+     * This mask separates the cell's type from the instance value.
+     */
+    public static final byte fBoardMask = (byte)0xe0;
+    /**
+     * The count of rows of this board
+     */
     public static final int fRows = 9;  //# of board rows
+    /**
+     * The count of columns of this board
+     */
     public static final int fCols = 7;  //# of board cols
 
-    public enum Color {None, Red, Black}  //color of piece (or none)
+    /**
+     * Color code of a piece
+     */
+    public enum Color {
+        /**
+         * No color if no piece or invalid
+         */
+        None,
+        /**
+         * Red color
+         */
+        Red,
+        /**
+         * Black color
+         */
+        Black
+    }
 
-    //-----------------------------------------------------------------------
-    //the playing board.  mBoard[0][0] is the upper left corner.
+    /**
+     * A 2D {@code Array} of {@code Integer} that holds the current playing board configuration.
+     * {@code mBoard[0][0]} is the top-left corner.
+     */
     protected byte mBoard[][] = new byte[fRows][fCols];
-    protected boolean mBlacksTurn = true;  //by convention, black goes first
+    /**
+     * A {@code bool} value which specify whether it is black side's turn.
+     * By convention, black goes first.
+     */
+    protected boolean mBlacksTurn = true;
 
-    //-----------------------------------------------------------------------
-    // init the board.  by convention, red will initially be in the top half
-    // (0,0) of the board, and black will start in the bottom half.
-    // be careful.  the opposite sides do not mirror each other!
+
+    /**
+     * Create an instance of class {@link Board} and initialize the board.<br/>
+     * By convention, red will initially be in the top half (0,0) of the board,
+     * and black will start in the bottom half.
+     */
     public Board() {
         int mRow = getBoardRowMedian();
         int mCol = getBoardColumnMedian();
@@ -96,138 +225,184 @@ public class Board {
         // set pieces for red
         setPiece(0, 0, rLion);
         setPiece(0, fCols - 1, rTiger);
-        setPiece(1, 1, rWolf);
+        setPiece(1, 1, rDog);
         setPiece(1, fCols - 2, rCat);
         setPiece(2, 0, rRat);
         setPiece(2, 2, rLeopard);
-        setPiece(2, fCols - 3, rDog);
+        setPiece(2, fCols - 3, rWolf);
         setPiece(2, fCols - 1, rElephant);
         // set pieces for black, diagonal-wise reversed.
         setPiece(fRows - 1, fCols - 1, bLion);
         setPiece(fRows - 1, 0, bTiger);
-        setPiece(fRows - 2, fCols - 2, bWolf);
+        setPiece(fRows - 2, fCols - 2, bDog);
         setPiece(fRows - 2, 1, bCat);
         setPiece(fRows - 3, fCols - 1, bRat);
         setPiece(fRows - 3, fCols - 3, bLeopard);
-        setPiece(fRows - 3, 2, bDog);
+        setPiece(fRows - 3, 2, bWolf);
         setPiece(fRows - 3, 0, bElephant);
     }
 
-
     /**
-     * Place a piece at an empty board cell.
-     * If the cell is not vacant, nothing will be placed.
+     * Test whether a coming move is valid or not regardless of whose turn it is.
      *
-     * @param r The row number of the cell.
-     * @param c The column number of the cell.
-     * @param p The piece to be placed.
+     * @param fromRow The row index of the piece's current position.
+     * @param fromCol The column index of the piece's current position.
+     * @param toRow   The row index of the destination position.
+     * @param toCol   The column index of the destination position.
+     * @return Returns {@code true) if the proposed move is valid; returns {@code false} otherwise.
      */
-    void setPiece(int r, int c, int p) {
-        // TODO: Add rules for special cells
-        if (r >= 0 && r < fRows && c >= 0 && c < fCols &&
-                p >= rbNone && p <= bElephant &&
-                (mBoard[r][c] & fPieceMask) == 0)
-            mBoard[r][c] += p;
+    protected boolean isValidMove(int fromRow, int fromCol, int toRow, int toCol) {
+        // legal position at FROM?
+        // legal position at TO?
+        // is to == from?
+        if (!isLegalPosition(fromRow, fromCol) ||
+                !isLegalPosition(toRow, toCol) ||
+                isPositionNotChanged(fromRow, fromCol, toRow, toCol))
+            return false;
+        // is there a piece at FROM?
+        if (getPiece(fromRow, fromCol) == rbNone) return false;
+        // can it move to the desired position?
+        if (!canMove(fromRow, fromCol, toRow, toCol)) return false;
+        // is there a piece at TO?
+        return getPiece(toRow, toCol) == rbNone || canCapture(fromRow, fromCol, toRow, toCol);
     }
 
-
     /**
-     * Remove a piece from a board cell.
+     * Perform the specified move but only if it's valid.
      *
-     * @param r The row number of the cell.
-     * @param c The column number of the cell.
+     * @param fromRow The row index of the piece's current position.
+     * @param fromCol The column index of the piece's current position.
+     * @param toRow   The row index of the destination position.
+     * @param toCol   The column index of the destination position.
+     * @return Returns {@code true) if the proposed move is valid; returns {@code false} otherwise.
      */
-    void removePiece(int r, int c) {
-        if (r >= 0 && r < fRows && c >= 0 && c < fCols)
-            mBoard[r][c] &= fBoardMask;
+    public boolean doMove(int fromRow, int fromCol, int toRow, int toCol) {
+        if (!isValidMove(fromRow, fromCol, toRow, toCol))
+            return false;
+
+        // get piece
+        int p = getPiece(fromRow, fromCol);
+        // remove pieces at both from and to
+        removePiece(fromRow, fromCol);
+        removePiece(toRow, toCol);
+        // set piece at to
+        setPiece(toRow, toCol, p);
+        return true;
     }
 
-
-    //-----------------------------------------------------------------------
-    // return the specific (moveable) piece (e.g., bWolf or rbNone) at the
-    // indicated position.
+    /**
+     * Return the specific (moveable) piece (e.g., bWolf or rbNone) at the
+     * indicated position.
+     *
+     * @param c Row index
+     * @param r Column index
+     * @return Return the specific piece at the indicated position.
+     */
     public int getPiece(int r, int c) {
-        return (r >= fRows || c >= fCols || r < 0 || c < 0) ? rbNone :
-                fPieceMask & mBoard[r][c];
+        return (isLegalPosition(r, c)) ?
+                fPieceMask & mBoard[r][c] :
+                rbNone;
     }
 
-    //-----------------------------------------------------------------------
-    // given a piece, return its rank (or 0 for an unknown piece).
-    // rat is 1, cat is 2, dog is 3, wolf is 4, leopard is 5, tiger is 6, lion is 7, elephant is 8.
+    /**
+     * given a piece, return its rank (or 0 for an unknown piece).
+     * rat is 1, cat is 2, dog is 3, wolf is 4, leopard is 5, tiger is 6, lion is 7, elephant is 8.
+     *
+     * @param p An {@code Integer} which is a piece
+     * @return Returns the rank of the given piece.
+     */
     public int getRank(int p) {
         return (p <= rbNone || p > bElephant) ? rbNone :
                 (p % rElephant == 0) ? rElephant : p % rElephant;
     }
 
-    //-----------------------------------------------------------------------
-    // return the rank of the piece at the specified position (or 0 for none).
-    // rat is 1, cat is 2, dog is 3, wolf is 4, leopard is 5, tiger is 6, lion is 7, elephant is 8.
+    /**
+     * return the rank of the piece at the specified position (or 0 for none).
+     * rat is 1, cat is 2, dog is 3, wolf is 4, leopard is 5, tiger is 6, lion is 7, elephant is 8.
+     *
+     * @param c Row index
+     * @param r Column index
+     * @return Returns the rank of the piece at the given position.
+     */
     public int getRank(int r, int c) {
-        if (r >= fRows || c >= fCols || r < 0 || c < 0)
-            return rbNone;
+        if (!isLegalPosition(r, c)) return rbNone;
         int p = fPieceMask & mBoard[r][c];
         if (p == rbNone) return rbNone;
         return (p % rElephant == 0) ? rElephant : p % rElephant;
     }
 
-    //-----------------------------------------------------------------------
-    // returns what appears on the underlying board at the specified position
-    // (e.g., cWater), or cNone if out of bounds.
+    /**
+     * Returns what appears on the underlying board at the specified position
+     *
+     * @param r Row index
+     * @param c Column index
+     * @return Returns the cell type at the specified position
+     */
     public int getBoard(int r, int c) {
-        return (r >= fRows || c >= fCols || r < 0 || c < 0) ? cNone :
-                fBoardMask & mBoard[r][c];
+        return (isLegalPosition(r, c)) ?
+                fBoardMask & mBoard[r][c] :
+                cNone;
     }
 
-    //-----------------------------------------------------------------------
-    // returns the color of the piece (or Color.None) at the specified location.
+    /**
+     * Returns the value of {@link Color} of the piece at the specified location.
+     *
+     * @param r Row index
+     * @param c Column index
+     * @return Returns the {@link Color} of the piece (or Color.None) at the specified location.
+     * @see Color
+     */
     public Color getColor(int r, int c) {
-        if (r >= fRows || c >= fCols || r < 0 || c < 0)
+        if (!isLegalPosition(r, c))
             return Color.None;
         // get piece first
         int p = fPieceMask & mBoard[r][c];
-        if (p == rbNone) return Color.None;
-        if (p - rElephant > rbNone) return Color.Black;
-        return Color.Red;
+        return (p == rbNone) ? Color.None :
+                (p - rElephant > rbNone) ? Color.Black : Color.Red;
     }
 
-    //-----------------------------------------------------------------------
-    // returns t if this spot does not have any (moveable) piece on it;
-    // f otherwise or if out of bounds.
+    /**
+     * Test whether it's an empty cell at the specified position.
+     *
+     * @param r Row index
+     * @param c Column index
+     * @return Returns {@code true} if the position has no piece on it; {@code false} otherwise or if out of bounds.
+     */
     public boolean isEmpty(int r, int c) {
-        return (r < fRows && c < fCols && r >= 0 && c >= 0) &&
+        return (!isLegalPosition(r, c)) ||
                 rbNone == (fPieceMask & mBoard[r][c]);
     }
 
-    //-----------------------------------------------------------------------
-    // returns a string representing the board that can be pretty-printed.
-    // it should look something like the following:
-    //
-    //     --...-        --...-     \n
-    //    |      |      |      |    \n
-    //    .      .      .      .     .
-    //    .      .      .      .     .
-    //    .      .      .      .     .
-    //    |      |      |      |    \n
-    //     --...-        --...-     \n
-    //
-    // the left side of the string should be the underlying board.
-    // the right side should be the pieces at their specific locations.
-    // put the first 3 characters of the name at each location
-    // (e.g., rLi for the red lion, and bEl for the black elephant).
-    //
-    // if you have a better idea, please let me know!
+    /**
+     * Returns a string representing the board that can be pretty-printed.
+     * It should look something like the following:
+     * <pre>
+     *     --...-        --...-     \n
+     *    |      |      |      |    \n
+     *    .      .      .      .     .
+     *    .      .      .      .     .
+     *    .      .      .      .     .
+     *    |      |      |      |    \n
+     *     --...-        --...-     \n
+     * </pre>
+     * The left side of the string should be the underlying board.
+     * The right side should be the pieces at their specific locations.
+     * Put the first 3 characters of the name at each location
+     * (e.g., rLi for the red lion, and bEl for the black elephant).
+     * If you have a better idea, please let me know!
+     *
+     * @return A {@link String} which represents the current board configuration.
+     */
     @Override
     public String toString() {
+        String verticalGap = "          ";
+        String[] cells = getPrintableBoardCells();
+        String[] pieces = getPrintablePieceConfig();
         StringBuffer sb = new StringBuffer();
-        for (int r = 0; r < fRows; r++) {
-            String line = "";
-            for (int c = 0; c < fCols; c++)
-                line += String.format("%1$s|%2$s ", getBoardType(r, c), getPieceType(r, c));
-            sb.append(String.format("%s%n", line.trim()));
-        }
+        for (int r = 0; r < fRows; r++)
+            sb.append(String.format("%1$s%2$s%3$s%n", cells[r], verticalGap, pieces[r]));
         return sb.toString();
     }
-
 
     /**
      * Get the median row number of the board definition.
@@ -238,7 +413,6 @@ public class Board {
         return getMedian(fRows);
     }
 
-
     /**
      * Get the median row number of the board definition.
      *
@@ -247,7 +421,6 @@ public class Board {
     static int getBoardColumnMedian() {
         return getMedian(fCols);
     }
-
 
     /**
      * Gets the median number.
@@ -267,6 +440,237 @@ public class Board {
                 (count % 2 == 0) ? (count - 1) >> 1 : count >> 1;
     }
 
+    /**
+     * Place a piece at an empty board cell.
+     * Note: This method is for internal use merely.
+     * It doesn't do check against game rules.<br/>
+     * If game rules are considered, {@link #doMove(int, int, int, int)}
+     * should be used instead.
+     *
+     * @param r The row number of the cell.
+     * @param c The column number of the cell.
+     * @param p The piece to be placed.
+     */
+    private void setPiece(int r, int c, int p) {
+        mBoard[r][c] |= p;
+    }
+
+    /**
+     * Removes a piece at the specified cell
+     *
+     * @param r Row index of the position
+     * @param c Column index of the position
+     */
+    private void removePiece(int r, int c) {
+        mBoard[r][c] &= fBoardMask;
+    }
+
+    /**
+     * Check against rules whether one piece can take another out.
+     * <pre>
+     *     Note:
+     *         1. Both {@code attacker} and {@code attacked} values would be modified inside.
+     *         2. This method simply compares the revised values of attacker and attacked.
+     *         3. The 2 values are revised according to the types of cells where the 2 pieces are,
+     *         with regards to the rules.
+     *         4. This method does not check whether the 2 pieces' values are valid or not.
+     *         5. Invokers have to validate whether the 2 pieces' values are valid.
+     * </pre>
+     *
+     * @param fr The row index of the piece's current position.
+     * @param fc The column index of the piece's current position.
+     * @param tr The row index of the destination position.
+     * @param tc The column index of the destination position.
+     * @return Returns {@code true} if {@code attacker} wins; {@code false} otherwise.
+     */
+    private boolean canCapture(int fr, int fc, int tr, int tc) {
+        int attacker = getPiece(fr, fc);
+        int attacked = getPiece(tr, tc);
+        Color attackerColor = getColor(fr, fc);
+        Color attackedColor = getColor(tr, tc);
+        int attackerCell = getBoard(fr, fc);
+        int attackedCell = getBoard(tr, tc);
+
+        // general: neither of the pieces can be rbNone.
+        // this is tested by the invoker
+        // if (attacker == rbNone || attacked == rbNone) return false;
+        // rule 0: same color, no attack
+        if (attackerColor == attackedColor) return false;
+
+        // -------- set both values into range rat...elephant --------- //
+        attacker = (attacker % rElephant == 0) ? rElephant : attacker % rElephant;
+        attacked = (attacked % rElephant == 0) ? rElephant : attacked % rElephant;
+
+        // rule 1: only rat can attack from anywhere, just simply do value comparison
+        attacker = (attackerCell == cWater && attacker != rRat) ? rbNone : attacker;
+        // rule 1-1: but, a rat in a water cell cannot attack an elephant
+        attacker = (attackerCell == cWater && attacker == rRat && attacked == rElephant) ?
+                rbNone : attacker;
+        // rule 2: none except a rat, can attack a piece in a water cell
+        attacker = (attacker != rRat && attackedCell == cWater) ? rbNone : attacker;
+        // rule 3: a piece can be attacked in a trap regardless of its power
+        attacked = (attackedCell == cRTrap || attackedCell == cBTrap) ? rbNone : attacked;
+        // rule 4: rat and elephant can capture each other
+        attacker = (attacker == rRat && attacked == rElephant) ? rElephant : attacker;
+        // rule 5: lion and tiger cannot attack a piece at the other side of river, only when a rat is in the river
+        //         --- don't care what color of that rat is in
+        attacker = ((attacker == rLion || attacker == rTiger) && !noPieceStandingInWater(fr, fc, tr, tc)) ?
+                rbNone : attacker;
+        // comparing 2 ranks
+        return attacker - attacked >= 0;
+    }
+
+    /**
+     * Test if a piece can move to the destination cell as it wishes.
+     * The destination cell must be empty.
+     *
+     * @param fr Row index of the cell where the piece stands
+     * @param fc Column index of the cell where the piece stands
+     * @param tr Row index of the destination cell
+     * @param tc Column index of the destination cell
+     * @return Returns {@code true} if the move is valid; {@code false} otherwise.
+     */
+    private boolean canMove(int fr, int fc, int tr, int tc) {
+        // set piece into range rat... elephant
+        int piece = getPiece(fr, fc);
+        piece = (piece % rElephant == 0) ? rElephant : piece % rElephant;
+
+        // get board cell type first
+        int src = getBoard(fr, fc);
+        int dst = getBoard(tr, tc);
+        int rowDist = abs(fr - tr);
+        int colDist = abs(fc - tc);
+
+        // rule 0: no diagonal move
+        if (fr != tr && fc != tc) return false;
+        // rule 1: no piece can move 2 cells further away except tiger & lion
+        if (piece != rTiger && piece != rLion && (rowDist > 1 || colDist > 1))
+            return false;
+        // rule 2: tiger or lion jump from one river bank to the other
+        if ((rowDist > 1 || colDist > 1) && (piece == rTiger || piece == rLion)) {
+            // only one bank to the other bank
+            if (!isRiverBank(fr, fc) || !isRiverBank(tr, tc))
+                return false;
+            // only one river at a time
+            if (!onlyWaterInBetween(fr, fc, tr, tc)) return false;
+            // no other piece standing in the river
+            if (!noPieceStandingInWater(fr, fc, tr, tc)) return false;
+        }
+        // rule 3: only rat can enter a water cell
+        if (dst == cWater && piece != rRat) return false;
+
+        return true;
+    }
+
+    /**
+     * Test whether a board cell is adjacent to a water cell
+     *
+     * @param r Row index
+     * @param c Column index
+     * @return Return {@code true} if the cell is adjacent to a water cell; return {@code false} otherwise;
+     */
+    private boolean isRiverBank(int r, int c) {
+        return (getBoard(r - 1, c) == cWater || getBoard(r + 1, c) == cWater || getBoard(r, c - 1) == cWater || getBoard
+                (r, c + 1) == cWater) && getBoard(r, c) != cWater;
+    }
+
+    /**
+     * Test whether a piece is actually placed at the same position where it is at.
+     *
+     * @param fr Row index of the cell where the piece stands
+     * @param fc Column index of the cell where the piece stands
+     * @param tr Row index of the destination cell
+     * @param tc Column index of the destination cell
+     * @return Returns {@code true} if the move is valid; {@code false} otherwise.
+     */
+    private boolean isPositionNotChanged(int fr, int fc, int tr, int tc) {
+        return fr == tr && fc == tc;
+    }
+
+    /**
+     * Test if only water cells are in between 2 positions
+     *
+     * @param fr Row index of the cell where the piece stands
+     * @param fc Column index of the cell where the piece stands
+     * @param tr Row index of the destination cell
+     * @param tc Column index of the destination cell
+     * @return Returns {@code true} if the move is valid; {@code false} otherwise.
+     */
+    private boolean onlyWaterInBetween(int fr, int fc, int tr, int tc) {
+        int startCol = ((tc > fc) ? fc : tc) + 1;
+        int endCol = ((tc > fc) ? tc : fc) - 1;
+        int startRow = ((tr > fr) ? fr : tr) + 1;
+        int endRow = ((tr > fr) ? tr : fr) - 1;
+        boolean checkRow = fr == tr;
+        boolean checkCol = fc == tc;
+
+        if (!checkCol && !checkRow) return false;
+
+        // check rows
+        if (checkRow) {
+            for (int c = startCol; c <= endCol; c++) {
+                checkRow = checkRow && (getBoard(fr, c) == cWater);
+            }
+            return checkRow;
+        }
+        // check columns
+        if (checkCol) {
+            for (int r = startRow; r <= endRow; r++) {
+                checkCol = checkCol && (getBoard(r, fc) == cWater);
+            }
+            return checkCol;
+        }
+
+        return false;
+    }
+
+    /**
+     * Test whether there is a piece in a water cell in the way from (fr, fc) to (tr, tc)
+     *
+     * @param fr Row index of the cell where the piece stands
+     * @param fc Column index of the cell where the piece stands
+     * @param tr Row index of the destination cell
+     * @param tc Column index of the destination cell
+     * @return Returns {@code true} if the move is valid; {@code false} otherwise.
+     */
+    private boolean noPieceStandingInWater(int fr, int fc, int tr, int tc) {
+        int startCol = ((tc > fc) ? fc : tc) + 1;
+        int endCol = ((tc > fc) ? tc : fc) - 1;
+        int startRow = ((tr > fr) ? fr : tr) + 1;
+        int endRow = ((tr > fr) ? tr : fr) - 1;
+        boolean checkRow = fr == tr;
+        boolean checkCol = fc == tc;
+
+        if (!checkCol && !checkRow) return false;
+
+        // check rows
+        if (checkRow) {
+            for (int c = startCol; c <= endCol; c++) {
+                checkRow = checkRow && (getPiece(fr, c) == rbNone);
+            }
+            return checkRow;
+        }
+        // check columns
+        if (checkCol) {
+            for (int r = startRow; r <= endRow; r++) {
+                checkCol = checkCol && (getPiece(r, fc) == rbNone);
+            }
+            return checkCol;
+        }
+
+        return false;
+    }
+
+    /**
+     * Test whether a position is legal on board
+     *
+     * @param r Row index
+     * @param c Column index
+     * @return Return {@code true} if the position is legal; return {@code false} otherwise;
+     */
+    private boolean isLegalPosition(int r, int c) {
+        return (r >= 0 && r < fRows && c >= 0 && c < fCols);
+    }
 
     /**
      * Get a cell's underling board's String form.
@@ -278,22 +682,21 @@ public class Board {
     private String getBoardType(int r, int c) {
         switch (getBoard(r, c)) {
             case cWater:
-                return "Water";
+                return "cWa";
             case cGround:
-                return "Ground";
+                return "cGr";
             case cBDen:
-                return "BDen";
+                return "cBd";
             case cRDen:
-                return "RDen";
+                return "cRd";
             case cRTrap:
-                return "RTrap";
+                return "cRt";
             case cBTrap:
-                return "BTrap";
+                return "cBt";
             default:
-                return "None";
+                return "cNo";
         }
     }
-
 
     /**
      * Get a piece's String form.
@@ -341,6 +744,46 @@ public class Board {
         }
     }
 
+    /**
+     * Get a {@link String} array of the board's cells (not including pieces) for print or log purpose.
+     *
+     * @return An array of {@code String} of all cells.
+     */
+    private String[] getPrintableBoardCells() {
+        String placeHolder = " . ";
+        String[] rows = new String[fRows];
+        String[] row = new String[fCols];
+        for (int r = 0; r < fRows; r++) {
+            for (int c = 0; c < fCols; c++)
+                row[c] = getBoardType(r, c);
+            rows[r] = String.join(placeHolder, row);
+        }
+        // help GC
+        row = null;
+
+        return rows;
+    }
+
+    /**
+     * Get a {@link String} array of the current board piece configuration for print or log
+     * purpose.
+     *
+     * @return An array of {@code String} of all pieces.
+     */
+    private String[] getPrintablePieceConfig() {
+        String placeHolder = " . ";
+        String[] rows = new String[fRows];
+        String[] row = new String[fCols];
+        for (int r = 0; r < fRows; r++) {
+            for (int c = 0; c < fCols; c++)
+                row[c] = getPieceType(r, c);
+            rows[r] = String.join(placeHolder, row);
+        }
+        // help GC
+        row = null;
+
+        return rows;
+    }
 
     /**
      * Build an array of {@code String} of piece names as
@@ -361,7 +804,6 @@ public class Board {
 
         return header;
     }
-
 
     /**
      * Build an array of {@code String} of cell types as
