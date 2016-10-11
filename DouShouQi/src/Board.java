@@ -24,7 +24,6 @@
 //------------------------------------------------------------------------------
 
 
-import java.math.BigInteger;
 import java.util.Arrays;
 
 import static java.lang.Math.abs;
@@ -189,6 +188,7 @@ public class Board {
      * By convention, black goes first.
      */
     protected boolean mBlacksTurn = true;
+
 
     /**
      * Create an instance of class {@link Board} and initialize the board.<br/>
@@ -640,8 +640,9 @@ public class Board {
         attacker = (attacker != rRat && attackedCell == cWater) ? rbNone : attacker;
         // rule 3: a piece can be attacked in a trap regardless of its power
         attacked = (attackedCell == cRTrap || attackedCell == cBTrap) ? rbNone : attacked;
-        // rule 4: rat and elephant can capture each other
-        attacker = (attacker == rRat && attacked == rElephant) ? rElephant : attacker;
+        // rule 4: a rat can attack an elephant but an elephant cannot attack a rat
+        attacker = (attacker == rRat && attacked == rElephant) ? rElephant :
+                (attacker == rElephant && attacked == rRat) ? rbNone : attacker;
         // rule 5: lion and tiger cannot attack a piece at the other side of river, only when a rat is in the river
         //         --- don't care what color of that rat is in
         attacker = ((attacker == rLion || attacker == rTiger) && !noPieceStandingInWater(fr, fc, tr, tc)) ?
@@ -667,6 +668,7 @@ public class Board {
 
         // get board cell type first
         int src = getBoard(fr, fc);
+        Color srcColor = getColor(fr, fc);
         int dst = getBoard(tr, tc);
         int rowDist = abs(fr - tr);
         int colDist = abs(fc - tc);
@@ -678,9 +680,8 @@ public class Board {
             return false;
         // rule 2: tiger or lion jump from one river bank to the other
         if ((rowDist > 1 || colDist > 1) && (piece == rTiger || piece == rLion)) {
-            // only one bank to the other bank
-            if (!isRiverBank(fr, fc) || !isRiverBank(tr, tc))
-                return false;
+            // only one bank to another
+            if (!isRiverBank(fr, fc) || !isRiverBank(tr, tc)) return false;
             // only one river at a time
             if (!onlyWaterInBetween(fr, fc, tr, tc)) return false;
             // no other piece standing in the river
@@ -688,8 +689,8 @@ public class Board {
         }
         // rule 3: only rat can enter a water cell
         if (dst == cWater && piece != rRat) return false;
-
-        return true;
+        // rule 4: none stands in a DEN when they are in the same color
+        return !(dst == cBDen && srcColor == Color.Black || dst == cRDen && srcColor == Color.Red);
     }
 
     /**
