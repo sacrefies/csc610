@@ -24,6 +24,9 @@
 //------------------------------------------------------------------------------
 
 
+import java.math.BigInteger;
+import java.util.Arrays;
+
 import static java.lang.Math.abs;
 
 /*
@@ -186,7 +189,6 @@ public class Board {
      * By convention, black goes first.
      */
     protected boolean mBlacksTurn = true;
-
 
     /**
      * Create an instance of class {@link Board} and initialize the board.<br/>
@@ -369,7 +371,7 @@ public class Board {
      * @return Returns {@code true} if the position has no piece on it; {@code false} otherwise or if out of bounds.
      */
     public boolean isEmpty(int r, int c) {
-        return (!isLegalPosition(r, c)) ||
+        return isLegalPosition(r, c) &&
                 rbNone == (fPieceMask & mBoard[r][c]);
     }
 
@@ -401,7 +403,135 @@ public class Board {
         StringBuffer sb = new StringBuffer();
         for (int r = 0; r < fRows; r++)
             sb.append(String.format("%1$s%2$s%3$s%n", cells[r], verticalGap, pieces[r]));
-        return sb.toString();
+        return sb.toString() + "\n" + "hash: " + String.valueOf(hashCode());
+    }
+
+    /**
+     * Get the number of black pieces remaining on the board.
+     *
+     * @return An integer number which represents the number of black pieces on the board.
+     */
+    public int countBlack() {
+        int count = 0;
+        for (int r = 0; r < fRows; r++)
+            for (int c = 0; c < fCols; c++)
+                count += (getColor(r, c) == Color.Black) ? 1 : 0;
+        return count;
+    }
+
+    /**
+     * Get the number of red pieces remaining on the board.
+     *
+     * @return An integer number which represents the number of red pieces on the board.
+     */
+    public int countRed() {
+        int count = 0;
+        for (int r = 0; r < fRows; r++)
+            for (int c = 0; c < fCols; c++)
+                count += (getColor(r, c) == Color.Red) ? 1 : 0;
+        return count;
+    }
+
+    /**
+     * Test whether Red is a winner (regardless of whose turn it is)
+     *
+     * @return Return {@code true} if red wins, false otherwise
+     */
+    public boolean isRedWinner() {
+        return getColor(fRows - 1, getBoardColumnMedian()) == Color.Red;
+    }
+
+    /**
+     * Test whether Black is a winner (regardless of whose turn it is)
+     *
+     * @return Return {@code true} if red wins, false otherwise
+     */
+    public boolean isBlackWinner() {
+        return getColor(0, getBoardColumnMedian()) == Color.Black;
+    }
+
+    /**
+     * Create and initialize an instance of class {@code Board}
+     * by copying another instance of class {@code Board}.
+     *
+     * @param other Another {@code Board} instance to copy
+     */
+    public Board(final Board other) {
+        if (other == null)
+            throw new IllegalArgumentException("The given source Board object is null");
+        // a copy constructor should do the following:
+        // 1. copy board configuration
+        // 2. copy the current turn
+        for (int r = 0; r < fRows; r++)
+            System.arraycopy(other.mBoard[r], 0, mBoard[r], 0, fCols);
+        mBlacksTurn = other.mBlacksTurn;
+    }
+
+    /**
+     * Test whether two {@code Board} instances have identical configurations.
+     *
+     * @param other The {@code Board} instance to compare with
+     * @return Return {@code true} if identical, false otherwise.
+     */
+    @Override
+    public boolean equals(Object other) {
+        // comparison of hashcodes is not enough because the board configurations
+        // can be different while the hashcodes are identical.
+        // So have to do comparison between 2 boards and current turns
+        return (other == this) || other != null && other.getClass() == getClass() &&
+                ((Board)other).mBlacksTurn == mBlacksTurn &&
+                equalsBoard((Board)other);
+    }
+
+    /**
+     * Compare two {@code Board} instances whether they have identical board contents.
+     *
+     * @param other The {@code Board} instance to compare with
+     * @return Return {@code true} if identical, false otherwise.
+     */
+    public boolean equalsBoard(Board other) {
+        return Arrays.deepEquals(other.mBoard, mBoard);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        // from "Effective Java" by J. Bloch:
+        // "Item 9: Always override hashCode when you override equals"
+        //
+        // use the string algorithm from
+        // https://en.wikipedia.org/wiki/Java_hashCode%28%29#The_java.lang.String_hash_function.
+        // simply treat the individual board values (i.e., mBoard[r][c]) as the
+        // individual character values.  (DO NOT use charAt on the string returned
+        // from toString for this function.)  also include the value of mBlacksTurn
+        // as described below as the last (i.e., nth) character.
+        //
+        //include individual board values
+        int hash = 0, i = 0;
+        for (int r = 0; r < Board.fRows; r++) {
+            for (int c = 0; c < Board.fCols; c++) {
+                // hash += (int)Math.pow(31, fRows * fCols - 1 - i) * mBoard[r][c];
+                // Math.pow() always gets wrong answer because of the number is too big
+                int power = 1;
+                if (i > 0) {
+                    for (int p = 1; p <= fRows * fCols - 1 - i; p++)
+                        power *= 31;
+                }
+                hash += power * mBoard[r][c];
+                i++;
+            }
+        }
+//        for (int r = 0; r < Board.fRows; r++)
+//            for (int c = 0; c < Board.fCols; c++)
+//                hash = hash * 31 + mBoard[r][c];
+
+        //include mBlacksTurn as the last character value by using a value of 1 if it
+        // is true, and a value of 2 if it is false.
+        return hash + ((mBlacksTurn) ? 1 : 2);
     }
 
     /**

@@ -556,11 +556,11 @@ public class BoardTest {
 
 
     /**
-     * Test getColor() by fed an illegal cell position
+     * Test getColor() by feeding an illegal cell position
      */
     @Test
     public void testGetCellColorByPosAtIllegalCell() {
-        System.out.println("Test getColor() by fed an illegal cell position");
+        System.out.println("Test getColor() by feeding an illegal cell position");
 
         int[] pos = getIllegalCellPosition();
         Board.Color expected = getExpectedColor(Board.rbNone);
@@ -570,6 +570,28 @@ public class BoardTest {
         String msg = "getColor() correctly? Expected: %1$s, Actual: %2$s";
         msg = String.format(msg, expected.toString(), actual.toString());
         assertEquals(msg, expected, actual);
+    }
+
+
+    /**
+     * Test copy-constructor
+     */
+    @Test
+    public void testCopyConstructor() {
+        System.out.println("Test copy-constructor");
+        Board b1 = new Board();
+        Board b2 = new Board(b1);
+
+        // b1 != b2 and b1.equals(b2) and b1.hashcode == b2.hashcode
+        boolean dblEqual = b1 != b2;
+        System.out.printf("b1 != b2: %b%n", dblEqual);
+        boolean equal = b1.equals(b2);
+        System.out.printf("b1.equals(b2): %b%n", equal);
+        boolean hash = b1.hashCode() == b2.hashCode();
+        System.out.printf("hashcodes are identical: %b%n", hash);
+        String msg = "Copy correctly? Expected: %1$b, Actual: %2$b";
+        msg = String.format(msg, true, dblEqual && equal && hash);
+        assertTrue(msg, dblEqual && equal && hash);
     }
 
 
